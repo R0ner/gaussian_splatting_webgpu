@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ellipsoid Primitive</title>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <script type="text/javascript" src="../common/OBJParser_interleaved.js"></script>
+    <script type="text/javascript" src="../common/Aabb.js"></script>
+    <script type="text/javascript" src="../common/BspTree_interleaved.js"></script>
+    <script type="text/javascript" src="ellipsoid_primitive.js"></script>
+</head>
+<style>
+    #c {
+        margin: 10px;
+    }
+    /* The span elements for the min and max values */
+    span {
+    display: inline-block; /* Set the display mode of the span elements to inline-block */
+    margin: 5px; /* Add some space around the span elements */
+    text-align: center; /* Center the text content of the span elements */
+    font-size: 12px; /* Set the font size of the span elements */
+    font-weight: bold; /* Make the font weight of the span elements bold */
+    }
+    .grid .property{
+        width:30%;
+        display:inline-block;
+        box-sizing:border-box;
+        text-align:right;
+        margin-top: 40px;
+    }
+
+    .grid .value{
+        text-align:left;
+        padding-left:10px;
+        width:60%;
+        display:inline-block;
+        box-sizing:border-box;
+        margin-top: 40px;
+    } 
+    .container {
+    /* This is a container element for grouping sliders, buttons, and menus together. */
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    position: absolute; 
+    top: 30px; 
+    left: 530px; 
+    width: 512px;
+    }
+    .cp{
+    position: absolute; 
+    z-index:1;
+    top: 380px; 
+    left: 125px;
+    }
+</style>
+<body>
+    <canvas id="webgpu-canvas" width="512" height="512">
+    </canvas>
+    <div class="container">
+        <div>
+            <input type="checkbox" id="update" name="update" checked/>
+            <label for="update">Progressive updates</label>
+          </div>
+        <div id="fps-counter">FPS: 0</div>
+    </div>
+    
+    
+</body>
+
+</html>
