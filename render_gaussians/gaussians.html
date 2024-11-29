@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Gaussians</title>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <script type="text/javascript" src="../common/OBJParser_interleaved.js"></script>
+    <script type="text/javascript" src="../common/Aabb.js"></script>
+    <script type="text/javascript" src="../common/BspTree_interleaved.js"></script>
+    <script type="text/javascript" src="gaussians.js"></script>
+</head>
+<style>
+    #c {
+        /* This is the canvas element where the green circle is drawn */
+        margin: 10px;
+    }
+    button {
+        /* These are the buttons for orbiting, decrementing, and incrementing */
+        width: 60px;
+        height: 20px;
+        font-size: 15px;
+        margin: 10px;
+    }
+    input[type=range] {
+        /* These are the sliders for adjusting the emission, k_d, k_a, k_s, and alpha values */
+        width: 125px;
+        height: 15px;
+        margin: 0px;
+        /* position: relative; */
+    }
+    label {
+        /* These are the labels for displaying the ids and ranges of the sliders */
+        font-size: 14px;
+        margin: 0px;
+    }
+    /* The span elements for the min and max values */
+    span {
+    display: inline-block; /* Set the display mode of the span elements to inline-block */
+    margin: 5px; /* Add some space around the span elements */
+    text-align: center; /* Center the text content of the span elements */
+    font-size: 12px; /* Set the font size of the span elements */
+    font-weight: bold; /* Make the font weight of the span elements bold */
+    }
+    .grid .property{
+        width:30%;
+        display:inline-block;
+        box-sizing:border-box;
+        text-align:right;
+        margin-top: 40px;
+    }
+
+    .grid .value{
+        text-align:left;
+        padding-left:10px;
+        width:60%;
+        display:inline-block;
+        box-sizing:border-box;
+        margin-top: 40px;
+    } 
+    .container {
+    /* This is a container element for grouping the sliders and labels together */
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    position: absolute; 
+    top: 30px; 
+    left: 530px; 
+    width: 512px;
+    }
+    .cp{
+    position: absolute; 
+    z-index:1;
+    top: 380px; 
+    left: 125px;
+    }
+</style>
+<body>
+    <canvas id="webgpu-canvas" width="512" height="512">
+    </canvas>
+    <div class="container">
+        <!-- <div>
+            <select id="object_menu" size="3">
+                <option selected disabled>Object Selection</option>
+                <option value="0">Utah Teapot</option>
+                <option value="1">Stanford Bunny</option>
+            </select>
+        </div> -->
+        <div class="property"><label for="subdivslider">Jitter Pixel Subdivision</label></div>
+        <div class="value">
+            <span>1</span>
+            <input id="subdivslider" type="range" min="1" max="10" step="1" value="1"/>
+            <span>10</span>
+        </div>
+        <div id="fps-counter">FPS: 0</div>
+    </div>
+    
+    
+</body>
+
+</html>
