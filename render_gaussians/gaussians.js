@@ -11,7 +11,7 @@ async function fetchShaderCode(url) {
 async function main() {
     var subdivslider = document.getElementById("subdivslider");
     var fpscounter = document.getElementById("fps-counter");
-    // var object_menu = document.getElementById("object_menu");
+    var splat_shader_menu = document.getElementById("splat_shader_menu");
 
     addEventListener("wheel", (event) => {
         update = true;
@@ -34,6 +34,27 @@ async function main() {
         update = true;
         subdivs = subdivslider.value;
     };
+
+    splat_shader_menu.addEventListener(
+        "click",
+        async function() {     
+            const expr = splat_shader_menu.selectedIndex;
+            switch (expr) {
+                case 1:
+                    shader_index_splat = 2;
+                    break;
+            
+                case 2:
+                    shader_index_splat = 0;
+                    break;
+            
+                default:
+                    break;
+            }
+            update = true;
+            // console.log(shader_index_splat);
+        }
+    );
 
     const gpu_options = new Object(); 
     gpu_options.powerPreference = "high-performance";
@@ -93,27 +114,18 @@ async function main() {
     // var drawingInfo = await readOBJFile(obj_filename, 1, true); // file name, scale, ccw vertices
     // buffers = load_object(drawingInfo, device, buffers); 
     
-    var gaussianInfo = await read_gaussians("../resources/objects/gaussians.json");
-    console.log(gaussianInfo);
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/gaussians.json");
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_100.json");
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_1688.json");
+    var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_16932.json");
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_34103_full.json");
+    // console.log(gaussianInfo);
 
     buffers.means = device.createBuffer({
         size: gaussianInfo.means.byteLength,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
     });
     device.queue.writeBuffer(buffers.means, 0, gaussianInfo.means);
-    // var manual_data =  new Float32Array(6);
-    // manual_data[0] = 50.0;
-    // manual_data[1] = 0.0;
-    // manual_data[2] = 0.0;
-    // manual_data[3] = 0.0;
-    // manual_data[4] = -50.0;
-    // manual_data[5] = 0.0;
-    // manual_data[6] = 0.0;
-    // buffers.means = device.createBuffer({
-    //     size: 1000,
-    //     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
-    // });
-    // device.queue.writeBuffer(buffers.means, 0, manual_data);
     
     buffers.scales = device.createBuffer({
         size: gaussianInfo.scales.byteLength,
@@ -148,14 +160,15 @@ async function main() {
     });
 
     var cam_const = 1.0;
+    // var cam_const = 1.0;
     var aspect = 1.0;
-    var shader_index_sphere = 1;
+    var shader_index_splat = 0;
     var shader_index_matte = 1;
     var use_texture = 1;
     var subdivs = 1;
     var render_object = 1;
     var uniforms = new Float32Array([aspect, cam_const]);
-    var uniforms_selection = new Uint32Array([shader_index_sphere, shader_index_matte, use_texture, subdivs, render_object]);
+    var uniforms_selection = new Uint32Array([shader_index_splat, shader_index_matte, use_texture, subdivs, render_object]);
 
     var last_time = performance.now();
     var current_time = performance.now();
@@ -178,7 +191,7 @@ async function main() {
             // Pass uniforms.
             uniforms[0] = aspect;
             uniforms[1] = cam_const;
-            uniforms_selection[0] = shader_index_sphere;
+            uniforms_selection[0] = shader_index_splat;
             uniforms_selection[1] = shader_index_matte;
             uniforms_selection[2] = use_texture;
             uniforms_selection[3] = subdivs;
@@ -367,7 +380,7 @@ async function read_gaussians(path) {
         for (let i = 0; i < 3; i++) {
             rots[idx * 12 + i * 4 + 0] = rot[i * 3 + 0];    
             rots[idx * 12 + i * 4 + 1] = rot[i * 3 + 1];    
-            rots[idx * 12 + i * 4 + 2] = rot[i * 3 + 2];    
+            rots[idx * 12 + i * 4 + 2] = rot[i * 3 + 2];     
         }
     }
     return new GaussianInfo(means, rots, scales, colors);

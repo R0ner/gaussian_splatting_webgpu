@@ -78,18 +78,18 @@
     <canvas id="webgpu-canvas" width="512" height="512">
     </canvas>
     <div class="container">
-        <!-- <div>
-            <select id="object_menu" size="3">
-                <option selected disabled>Object Selection</option>
-                <option value="0">Utah Teapot</option>
-                <option value="1">Stanford Bunny</option>
-            </select>
-        </div> -->
         <div class="property"><label for="subdivslider">Jitter Pixel Subdivision</label></div>
         <div class="value">
             <span>1</span>
             <input id="subdivslider" type="range" min="1" max="10" step="1" value="1"/>
             <span>10</span>
+        </div>
+        <div>
+            <select id="splat_shader_menu" size="3">
+                <option selected disabled>Gaussian Splat Shader</option>
+                <option value="0">Splat</option>
+                <option value="1">Ellipse (1 Std.)</option>
+            </select>
         </div>
         <div id="fps-counter">FPS: 0</div>
     </div>
