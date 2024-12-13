@@ -9,7 +9,7 @@ async function fetchShaderCode(url) {
 }
 
 async function main() {
-    var subdivslider = document.getElementById("subdivslider");
+    // var subdivslider = document.getElementById("subdivslider");
     var fpscounter = document.getElementById("fps-counter");
     var splat_shader_menu = document.getElementById("splat_shader_menu");
 
@@ -22,18 +22,21 @@ async function main() {
         update = true;
         switch (event.key) {
             case "+":
-                aspect *= 1.1;
+                // aspect *= 1.1;
+                subdivs += 1;
                 break
             case "-":
-                aspect *= 0.9;
+                subdivs -= 1;
+                // aspect *= 0.9;
                 break
         }
+        subdivs = Math.max(subdivs, 1);
     }
 
-    subdivslider.oninput = function(event) {
-        update = true;
-        subdivs = subdivslider.value;
-    };
+    // subdivslider.oninput = function(event) {
+    //     update = true;
+    //     subdivs = subdivslider.value;
+    // };
 
     splat_shader_menu.addEventListener(
         "click",
@@ -95,7 +98,7 @@ async function main() {
         },
     });
 
-    let jitter = new Float32Array(200); // allowing subdivs from 1 to 10
+    // let jitter = new Float32Array(200); // allowing subdivs from 1 to 10
     
     var buffers = new Object()
 
@@ -105,21 +108,32 @@ async function main() {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    buffers.jitter = device.createBuffer({
-        size: jitter.byteLength,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
-    });
+    // buffers.jitter = device.createBuffer({
+    //     size: jitter.byteLength,
+    //     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    // });
     
     // var obj_filename = "../resources/objects/CornellBox.obj";
     // var drawingInfo = await readOBJFile(obj_filename, 1, true); // file name, scale, ccw vertices
     // buffers = load_object(drawingInfo, device, buffers); 
     
     // var gaussianInfo = await read_gaussians("../resources/objects/private/gaussians.json");
-    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_100.json");
+
     // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_1688.json");
-    var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_16932.json");
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_16932.json");
     // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_34103_full.json");
+    
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/kedel_100.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/kedel_100_spatial_data.json");
+
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_full.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial.json");
+
+    var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k.json");
+    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial.json");
+   
     // console.log(gaussianInfo);
+    // console.log(spatialdataInfo);
 
     buffers.means = device.createBuffer({
         size: gaussianInfo.means.byteLength,
@@ -144,6 +158,30 @@ async function main() {
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
     });
     device.queue.writeBuffer(buffers.colors, 0, gaussianInfo.colors);
+    
+    // buffers.mins = device.createBuffer({
+    //     size: spatialdataInfo.mins.byteLength,
+    //     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    // });
+    // device.queue.writeBuffer(buffers.mins, 0, spatialdataInfo.mins);
+    
+    // buffers.maxs = device.createBuffer({
+    //     size: spatialdataInfo.maxs.byteLength,
+    //     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    // });
+    // device.queue.writeBuffer(buffers.maxs, 0, spatialdataInfo.maxs);
+    
+    buffers.aabbs = device.createBuffer({
+        size: spatialdataInfo.aabbs.byteLength,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    });
+    device.queue.writeBuffer(buffers.aabbs, 0, spatialdataInfo.aabbs);
+    
+    buffers.children = device.createBuffer({
+        size: spatialdataInfo.children.byteLength,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    });
+    device.queue.writeBuffer(buffers.children, 0, spatialdataInfo.children);
 
 
     // var bindGroup = get_bindgroup(buffers, device, pipeline);
@@ -151,15 +189,18 @@ async function main() {
         layout: pipeline.getBindGroupLayout(0),
         entries: [
             { binding: 0, resource: { buffer: buffers.uniforms } },
-            { binding: 1, resource: { buffer: buffers.jitter } },
-            { binding: 2, resource: { buffer: buffers.means } },
-            { binding: 3, resource: { buffer: buffers.scales } },
-            { binding: 4, resource: { buffer: buffers.rots } },
-            { binding: 5, resource: { buffer: buffers.colors } },
+            { binding: 1, resource: { buffer: buffers.means } },
+            { binding: 2, resource: { buffer: buffers.scales } },
+            { binding: 3, resource: { buffer: buffers.rots } },
+            { binding: 4, resource: { buffer: buffers.colors } },
+            // { binding: 5, resource: { buffer: buffers.mins } },
+            // { binding: 6, resource: { buffer: buffers.maxs } },
+            { binding: 5, resource: { buffer: buffers.aabbs } },
+            { binding: 6, resource: { buffer: buffers.children } },
         ],
     });
 
-    var cam_const = 1.0;
+    var cam_const = 1.2;
     // var cam_const = 1.0;
     var aspect = 1.0;
     var shader_index_splat = 0;
@@ -196,10 +237,10 @@ async function main() {
             uniforms_selection[2] = use_texture;
             uniforms_selection[3] = subdivs;
             uniforms_selection[4] = render_object;
-            compute_jitters(jitter, 1 / canvas.height, subdivs);
+            // compute_jitters(jitter, 1 / canvas.height, subdivs);
             device.queue.writeBuffer(buffers.uniforms, 0, uniforms);
             device.queue.writeBuffer(buffers.uniforms, 8, uniforms_selection);
-            device.queue.writeBuffer(buffers.jitter, 0, jitter);
+            // device.queue.writeBuffer(buffers.jitter, 0, jitter);
 
             // Create a render pass in a command buffer and submit it.
             let encoder = device.createCommandEncoder();
@@ -241,21 +282,21 @@ async function load_texture(device, filename) {
     return texture;
 }
 
-function compute_jitters(jitter, pixelsize, subdivs) {
-    const step = pixelsize / subdivs;
-    if (subdivs < 2) {
-        jitter[0] = 0.0;
-        jitter[1] = 0.0;
-    }
-    else {
-        for (var i = 0; i < subdivs; ++i)
-            for (var j = 0; j < subdivs; ++j) {
-                const idx = (i * subdivs + j) * 2;
-                jitter[idx] = (Math.random() + j) * step - pixelsize * 0.5;
-                jitter[idx + 1] = (Math.random() + i) * step - pixelsize * 0.5;
-            }
-    }
-}
+// function compute_jitters(jitter, pixelsize, subdivs) {
+//     const step = pixelsize / subdivs;
+//     if (subdivs < 2) {
+//         jitter[0] = 0.0;
+//         jitter[1] = 0.0;
+//     }
+//     else {
+//         for (var i = 0; i < subdivs; ++i)
+//             for (var j = 0; j < subdivs; ++j) {
+//                 const idx = (i * subdivs + j) * 2;
+//                 jitter[idx] = (Math.random() + j) * step - pixelsize * 0.5;
+//                 jitter[idx + 1] = (Math.random() + i) * step - pixelsize * 0.5;
+//             }
+//     }
+// }
 
 function load_object(drawingInfo, device, buffers) {
     const n_materials = drawingInfo.materials.length;
@@ -386,6 +427,49 @@ async function read_gaussians(path) {
     return new GaussianInfo(means, rots, scales, colors);
 }
 
+async function read_spatial_data(path) {
+    const response = await fetch(path); // Load the JSON file
+    var jsonData = await response.json(); // Parse JSON
+    jsonData =  dictionaryToArray(jsonData);
+    
+    const n_boxes = jsonData.length;
+
+    // Count the total number of children.
+    var n_children = 0;
+    for (let idx = 0; idx < n_boxes; idx++) {
+        const entry = jsonData[idx];
+        n_children += entry.child_indices.length; 
+    }
+
+    var aabbs = new Float32Array((2 * n_boxes) * 4);
+    var children = new Uint32Array(n_children + n_boxes * 3);
+    
+    var offset = n_boxes * 3;
+    for (let idx = 0; idx < n_boxes; idx++) {
+        const entry = jsonData[idx];
+        // console.log(entry);
+        aabbs[idx * 8 + 0] = entry.mins[0];
+        aabbs[idx * 8 + 1] = entry.mins[1];
+        aabbs[idx * 8 + 2] = entry.mins[2];
+
+        aabbs[idx * 8 + 4 + 0] = entry.maxs[0];
+        aabbs[idx * 8 + 4 + 1] = entry.maxs[1];
+        aabbs[idx * 8 + 4 + 2] = entry.maxs[2];
+        
+        const entry_children = entry.child_indices;
+        const n_entry_children = entry_children.length;
+        children[idx * 3 + 0] = offset; // where the indices begins in this list.
+        children[idx * 3 + 1] = n_entry_children; // number of children to loop over.
+        children[idx * 3 + 2] = entry.mins[3]; // is leaf: Whether to loop over boxes or ellipses.
+        for (let i = 0; i < n_entry_children; i++) {
+            children[offset + i] =  entry_children[i];
+        }
+        offset += n_entry_children;
+    }
+    return new SpatialDataInfo(aabbs, children);
+}
+
+
 const dictionaryToArray = (dictionary) => {
     return Object.keys(dictionary).map(key => (
         dictionary[key]
@@ -398,5 +482,12 @@ class GaussianInfo {
         this.rots = rots;
         this.scales = scales;
         this.colors = colors;
+    }
+}
+
+class SpatialDataInfo {
+    constructor(aabbs, children) {
+        this.aabbs = aabbs;
+        this.children = children;
     }
 }
