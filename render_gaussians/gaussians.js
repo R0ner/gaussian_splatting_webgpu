@@ -129,10 +129,17 @@ async function main() {
     // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_full.json");
     // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial.json");
 
-    var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k.json");
-    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial.json");
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k.json");
+    var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_full.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial.json");
+
+    // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k_NO_PRUNE.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial_NO_PRUNE.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_onlyleaf_v2.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial_bvh_v1.json");
+    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial_bvh.json");
    
-    // console.log(gaussianInfo);
+    console.log(gaussianInfo);  
     // console.log(spatialdataInfo);
 
     buffers.means = device.createBuffer({
@@ -404,13 +411,13 @@ async function read_gaussians(path) {
     var colors = new Float32Array(n_gaussians * 4);
     for (let idx = 0; idx < n_gaussians; idx++) {
         const entry = jsonData[idx];
-        means[idx * 4 + 0] = entry.xyz[0]; 
-        means[idx * 4 + 1] = entry.xyz[1];
-        means[idx * 4 + 2] = entry.xyz[2];
+        means[idx * 4 + 0] = entry.xyz[0] * 100.0; 
+        means[idx * 4 + 1] = entry.xyz[1] * 100.0;
+        means[idx * 4 + 2] = entry.xyz[2] * 100.0;
         
-        scales[idx * 4 + 0] = entry.scale[0]; 
-        scales[idx * 4 + 1] = entry.scale[1];
-        scales[idx * 4 + 2] = entry.scale[2];
+        scales[idx * 4 + 0] = entry.scale[0] * 100.0; 
+        scales[idx * 4 + 1] = entry.scale[1] * 100.0;
+        scales[idx * 4 + 2] = entry.scale[2] * 100.0;
         
         colors[idx * 4 + 0] = entry.color_rgb[0]; 
         colors[idx * 4 + 1] = entry.color_rgb[1];
@@ -448,13 +455,13 @@ async function read_spatial_data(path) {
     for (let idx = 0; idx < n_boxes; idx++) {
         const entry = jsonData[idx];
         // console.log(entry);
-        aabbs[idx * 8 + 0] = entry.mins[0];
-        aabbs[idx * 8 + 1] = entry.mins[1];
-        aabbs[idx * 8 + 2] = entry.mins[2];
+        aabbs[idx * 8 + 0] = entry.mins[0] * 100.0;
+        aabbs[idx * 8 + 1] = entry.mins[1] * 100.0;
+        aabbs[idx * 8 + 2] = entry.mins[2] * 100.0;
 
-        aabbs[idx * 8 + 4 + 0] = entry.maxs[0];
-        aabbs[idx * 8 + 4 + 1] = entry.maxs[1];
-        aabbs[idx * 8 + 4 + 2] = entry.maxs[2];
+        aabbs[idx * 8 + 4 + 0] = entry.maxs[0] * 100.0;
+        aabbs[idx * 8 + 4 + 1] = entry.maxs[1] * 100.0;
+        aabbs[idx * 8 + 4 + 2] = entry.maxs[2] * 100.0;
         
         const entry_children = entry.child_indices;
         const n_entry_children = entry_children.length;
