@@ -142,6 +142,7 @@ fn intersect_splats(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, shader: 
 
     // var bounds0 = vec4f(0.0);
     // var bounds1 = vec4f(0.0);
+    var dist = 0.0;
     var dist0 = 0.0;
     var dist1 = 0.0;
 
@@ -178,14 +179,20 @@ fn intersect_splats(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, shader: 
             r.tmin = 0.0;
             for(var j = 0u; j < n_children; j++) {
                 child_idx = children[j + offset];
+
                 if(child_idx == (*hit).last_hit) {
                     continue;
                 }
-                if(intersect_ellipsoid(*r, hit, means[child_idx], scales[child_idx], rots[child_idx], shader)) {
-                    (*r).tmax = (*hit).dist;
-                    (*hit).last_hit = child_idx;
-                    closest_hit_idx = child_idx;
-                    done = true;
+                // dist = dot(means[child_idx] - r.origin, r.direction);
+                dist = distance(means[child_idx], r.origin);
+                if((dist < r.tmax) & (r.tmin < dist)) {
+                    if(intersect_ellipsoid(*r, hit, means[child_idx], scales[child_idx], rots[child_idx], shader)) {
+                        (*r).tmax = dist;
+                        (*hit).dist = dist;
+                        (*hit).last_hit = child_idx;
+                        closest_hit_idx = child_idx;
+                        done = true;
+                    }
                 }
             }
             if(done) {
@@ -284,12 +291,12 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
     // let scale_clamped = scale;
 
     let stds = scale_clamped; 
-    // var radii = scale_clamped;
-    let radii = vec3f(3.0);
+    var radii = scale_clamped;
+    // let radii = vec3f(3.0);
 
-    // if(shader == 2) {
-    //     radii *= 1.0;
-    // } 
+    if(shader == 2) {
+        radii *= 2.0;
+    } 
     // radii *= 1.0;
 
     let r_e_origin  = rotation * (r.origin - center);
@@ -372,7 +379,7 @@ fn intersect_scene(r: ptr<function, Ray>, hit : ptr<function, HitInfo>) -> bool 
     // let d = scales[0];
     // let e = rots[0];
     // let f = colors[0];
-    let did_hit_plane = intersect_plane(*r, hit,  vec3f(0.6, 2.34, 3.36) * 100, normalize(vec3f(-0.15, -1.5, -1)));
+    let did_hit_plane = intersect_plane(*r, hit,  (vec3f(0.6, 2.34, 3.36)-0.0 * normalize(vec3f(-0.15, -1.5, -1))) * 100, normalize(vec3f(-0.15, -1.5, -1)));
     let did_hit_sphere = intersect_sphere(*r, hit, vec3f(0.45, 2.17, 3.08) * 100, 31.0, 3);
     
     intersect_splats(r, hit, uniforms.shader_index_splat);
@@ -427,7 +434,6 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
     // return L_r;
     return L_r;
 }
-
 
 fn mirror(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
     // Overwrite the old ray with the reflected ray.
@@ -515,7 +521,7 @@ fn get_camera_ray(ipcoords: vec2f) -> Ray {
     // let anglex = radians(180);
     // let angley = radians(0);
     // let anglez = radians(0);
-    let magnitude = 4.0;
+    let magnitude = 3.0;
     // let rotmatz = mat3x3f(
     //     cos(anglez), sin(anglez), 0.0,
     //     -sin(anglez), cos(anglez), 0.0,
@@ -531,7 +537,7 @@ fn get_camera_ray(ipcoords: vec2f) -> Ray {
     //    0.0, cos(anglex), sin(anglex),
     //    0.0, -sin(anglex), cos(anglex),
     // );
-    let t = radians(0);
+    let t = radians(120);
     // let t = radians(4.0 * f32(uniforms.subdivs));
     // let up = normalize(vec3f(0.0, -1.5, -1.0));
     let up = normalize(vec3f(-0.15, -1.5, -1));
@@ -543,8 +549,8 @@ fn get_camera_ray(ipcoords: vec2f) -> Ray {
         up[2]*up[0]*(1-cos_t)-up[1] * sin_t, up[1]*up[2] * (1 - cos_t)+up[0]*sin_t, cos_t + up[2]*up[2] * (1 - cos_t)
     );
     
-    // var lookat = vec3f(-0.13, 1.65, 3.4);
-    var lookat = vec3f(0.72, 1.65, 3.4);
+    var lookat = vec3f(-0.13, 1.65, 3.4);
+    // var lookat = vec3f(0.72, 1.65, 3.4);
     // let lookat_to_eye = vec3f(0.0, -1 / sqrt(2), -1 / sqrt(2)) * magnitude;
     let lookat_to_eye = vec3f(0.0,  1.0, -1.5) * magnitude;
     // let eye = (rotmatz * (rotmaty * lookat_to_eye) + lookat) * 100;

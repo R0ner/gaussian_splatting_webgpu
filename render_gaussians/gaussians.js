@@ -30,7 +30,7 @@ async function main() {
                 // aspect *= 0.9;
                 break
         }
-        subdivs = Math.max(subdivs, 1);
+        // subdivs = Math.max(subdivs, 1);
     }
 
     // subdivslider.oninput = function(event) {
@@ -133,8 +133,8 @@ async function main() {
     var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_full.json");
   
     // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial_bvh_v1.json");
-    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial_bvh.json");
-    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_both_spatial_bvh.json");
+    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial_bvh.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_both_spatial_bvh.json");
    
     // console.log(gaussianInfo);  
     // console.log(spatialdataInfo);
