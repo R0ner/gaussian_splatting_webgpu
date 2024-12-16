@@ -64,11 +64,6 @@ struct HitInfo {
     last_hit: u32,
 };
 
-struct Onb {
-    tangent: vec3f,
-    binormal: vec3f,
-    normal: vec3f,
-};
 
 // Light struct
 struct Light {
@@ -98,8 +93,8 @@ fn intersect_min_max(r: ptr<function, Ray>, aabb: Aabb) -> bool {
 }
 
 fn intersect_box(r: ptr<function, Ray>, aabb: Aabb) -> f32 {
-    let p1 = (aabb.min - r.origin - 1e-2)/r.direction;
-    let p2 = (aabb.max - r.origin + 1e-2)/r.direction;
+    let p1 = (aabb.min - r.origin)/r.direction;
+    let p2 = (aabb.max - r.origin)/r.direction;
     let pmin = min(p1, p2);
     let pmax = max(p1, p2);
     let tmin = max(pmin.x, max(pmin.y, pmin.z));
@@ -110,31 +105,29 @@ fn intersect_box(r: ptr<function, Ray>, aabb: Aabb) -> f32 {
     return max(min(tmin, tmax), 1e-4);
 }
 
-// fn intersect_plane(r: Ray, hit: ptr<function, HitInfo>, position: vec3f, onb: Onb) -> bool {
-//     let denominator = dot(r.direction, onb.normal);
+fn intersect_plane(r: Ray, hit: ptr<function, HitInfo>, position: vec3f, normal: vec3f) -> bool {
+    let denominator = dot(r.direction, normal);
     
-//     if(abs(denominator) < 1e-8) {
-//         return false;
-//     }
+    if(abs(denominator) < 1e-8) {
+        return false;
+    }
     
-//     let t_prime = dot(position - r.origin, onb.normal) / denominator;
+    let t_prime = dot(position - r.origin, normal) / denominator;
 
-//     if(check_ray_hit(r, *hit, t_prime)) {
-//         return false;
-//     }
+    if(check_ray_hit(r, *hit, t_prime)) {
+        return false;
+    }
 
-//     (*hit).has_hit = true;
-//     (*hit).dist = t_prime;
-//     (*hit).position = r.origin + t_prime * r.direction;
-//     (*hit).normal = onb.normal;
-//     (*hit).shader = uniforms.shader_index_matte;
-    
-//     (*hit).ambient = vec3f(0.1, 0.7, 0.0);
-//     (*hit).diffuse = vec3f(0.1, 0.7, 0.0);
-    
+    (*hit).has_hit = true;
+    (*hit).dist = t_prime;
+    (*hit).position = r.origin + t_prime * r.direction;
+    (*hit).normal = normal;
+    (*hit).ambient = vec3f(0.5, 0.5, 0.5);
+    (*hit).diffuse = vec3f(0.5, 0.5, 0.5);
+    (*hit).shader = 1;
 
-//     return true;
-// }
+    return true;
+}
 
 fn intersect_splats(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, shader: u32) -> bool {
     // If we are not within the aabb of the Gaussian splatting, exit.
@@ -215,21 +208,21 @@ fn intersect_splats(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, shader: 
             dist0 = intersect_box(r, aabbs[child0]);
             dist1 = intersect_box(r, aabbs[child1]);
             if(dist0 < dist1) {
-                if(dist1 > 0.0) {
+                if(dist1 > -1e-4) {
                     stack_idx += 1;
                     stack[stack_idx] = child1;
                 }
-                if(dist0 > 0.0) {
+                if(dist0 > -1e-4) {
                     stack_idx += 1;
                     stack[stack_idx] = child0;
                 }
             }
             else {
-                if(dist0 > 0.0) {
+                if(dist0 > -1e-4) {
                     stack_idx += 1;
                     stack[stack_idx] = child0;
                 }
-                if(dist1 > 0.0) {
+                if(dist1 > -1e-4) {
                     stack_idx += 1;
                     stack[stack_idx] = child1;
                 }
@@ -270,8 +263,8 @@ fn intersect_sphere(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, radius: 
     (*hit).dist = t_prime;
     (*hit).position = r.origin + t_prime * r.direction;
     (*hit).normal = normalize((*hit).position - center);
-    (*hit).ambient = vec3f(0.0, 0.0, 0.0);
-    (*hit).diffuse = vec3f(1.0, 1.0, 1.0);
+    (*hit).ambient = vec3f(1.0, 0.0, 0.0);
+    (*hit).diffuse = vec3f(1.0, 0.0, 0.0);
     (*hit).ior1_over_ior2 = 1.0 / 1.5; // Hit from outside of the material.
     (*hit).shader = shader;
     
@@ -287,16 +280,17 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
     // Adapted from https://iquilezles.org/articles/intersectors/ and
     // additional code by GRAPHDECO research group, https://team.inria.fr/graphdeco.
     // let scale_clamped = clamp(scale, vec3f(1), vec3f(1e14));
-    let scale_clamped = max(scale, vec3f(9e-1));
+    let scale_clamped = max(scale, vec3f(4e-1));
     // let scale_clamped = scale;
 
     let stds = scale_clamped; 
-    var radii = scale_clamped;
-    
+    // var radii = scale_clamped;
+    let radii = vec3f(3.0);
+
     // if(shader == 2) {
-    //     radii *= 3.0;
+    //     radii *= 1.0;
     // } 
-    radii *= 3.0;
+    // radii *= 1.0;
 
     let r_e_origin  = rotation * (r.origin - center);
     let r_e_direction  = rotation * r.direction;
@@ -320,7 +314,7 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
 
     var t_prime = 0.0;
 
-    if(t1_prime-1e-4 > r.tmin) {
+    if(t1_prime-1e-4> r.tmin) {
         t_prime = t1_prime;
     }
     else {
@@ -339,6 +333,10 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
         let vp = dot(v, p);
         let factor = SQRT_TAU * exp(( vp * vp - dot(p, p) ) / 2.0);
 
+        if(factor < 0.5) {
+            return false;
+        }
+
         (*hit).factor = factor;
     }
     else {
@@ -347,6 +345,11 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
         (*hit).ambient = vec3f(1.0, 0.0, 0.0);
         (*hit).diffuse = vec3f(1.0, 1.0, 1.0);
         (*hit).ior1_over_ior2 = 1.0 / 1.5; // Hit from outside of the material.
+        
+        if(dot(r.direction, (*hit).normal) > 0.0) {
+            (*hit).ior1_over_ior2 = 1.0 / (*hit).ior1_over_ior2;
+            (*hit).normal = -(*hit).normal;
+        }
     }
     
     (*hit).has_hit = true;
@@ -354,10 +357,6 @@ fn intersect_ellipsoid(r: Ray, hit: ptr<function, HitInfo>, center: vec3f, scale
     (*hit).dist = t_prime;
     (*hit).shader = shader;
 
-    if(dot(r.direction, (*hit).normal) > 0.0) {
-        (*hit).ior1_over_ior2 = 1.0 / (*hit).ior1_over_ior2;
-        (*hit).normal = -(*hit).normal;
-    }
     
     return true;
 }
@@ -367,6 +366,15 @@ fn intersect_scene(r: ptr<function, Ray>, hit : ptr<function, HitInfo>) -> bool 
     // Call an intersection function for each object.
     // For each intersection found, update (*r).tmax and store additional info about the hit.
 
+    // let a = aabbs[0];
+    // let b = children[0];
+    // let c = means[0];
+    // let d = scales[0];
+    // let e = rots[0];
+    // let f = colors[0];
+    let did_hit_plane = intersect_plane(*r, hit,  vec3f(0.6, 2.34, 3.36) * 100, normalize(vec3f(-0.15, -1.5, -1)));
+    let did_hit_sphere = intersect_sphere(*r, hit, vec3f(0.45, 2.17, 3.08) * 100, 31.0, 3);
+    
     intersect_splats(r, hit, uniforms.shader_index_splat);
 
     return (*hit).has_hit;
@@ -376,8 +384,8 @@ fn sample_directional_light(pos: vec3f) -> Light {
     const pi = radians(180.0);
     const intensity = vec3f(pi, pi, pi);
     
-    const direction = normalize(vec3f(-1.0));
-    
+    // const direction = normalize(vec3f(-1.0));
+    const direction = normalize(vec3f(0, -1.5, -1));
     var light: Light;
     
     light.dist = 1e14;
@@ -397,7 +405,8 @@ fn occlusion(origin: vec3f, direction: vec3f, dist: f32) -> bool {
 
     var hit = get_hitinfo();
 
-    return intersect_scene(&ray, &hit);
+    // return intersect_scene(&ray, &hit);
+    return intersect_sphere(ray, &hit, vec3f(0.45, 2.25, 3.1) * 100, 30.0, 1);
 }
 
 fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
@@ -413,11 +422,12 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
         V = 0.0;
     }
     // let L_r = (*hit).diffuse / pi * V / (light.dist * light.dist) * dot((*hit).normal, light.w_i)  * light.L_i;
-    let L_r = (*hit).diffuse / pi * V * dot((*hit).normal, light.w_i)  * light.L_i;
+    let L_r = (*hit).diffuse / pi * V * dot((*hit).normal, light.w_i)  * light.L_i * (*hit).transmittance;
 
     // return L_r;
     return L_r;
 }
+
 
 fn mirror(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
     // Overwrite the old ray with the reflected ray.
@@ -449,7 +459,7 @@ fn refractive(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
 
     (*hit).has_hit = false;
 
-    return vec3f(0.0, 0.0, 0.0);
+    return vec3f(0.0, 0.0, 0.0) ;
 }
 
 fn splat(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
@@ -476,7 +486,7 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
         case 3 { return mirror(r, hit); }
         case 4 { return refractive(r, hit); }
         // case 5 { return glossy(r, hit); }
-        case default { return (*hit).ambient; }
+        case default { return (*hit).transmittance * (*hit).ambient; }
     }
 }
 
@@ -502,9 +512,45 @@ fn get_camera_ray(ipcoords: vec2f) -> Ray {
     // const up = vec3f(1.0, 0.0, 0.0);
 
     // Nisser
-    const eye = vec3f(2.0, 5.0, -5.0) * 100;
-    const lookat = vec3f(0.25, 3.25, 0.0) * 100;
-    const up = vec3f(0.0, -1.0, 0.0);
+    // let anglex = radians(180);
+    // let angley = radians(0);
+    // let anglez = radians(0);
+    let magnitude = 4.0;
+    // let rotmatz = mat3x3f(
+    //     cos(anglez), sin(anglez), 0.0,
+    //     -sin(anglez), cos(anglez), 0.0,
+    //     0.0, 0.0, 1.0
+    // );
+    // let rotmaty = mat3x3f(
+    //     cos(angley), 0.0, sin(angley),
+    //     0.0, 1.0, 0.0,
+    //     -sin(angley), 0.0, cos(angley),
+    // );
+    // let rotmatx = mat3x3f(
+    //    1.0, 0.0, 0.0,
+    //    0.0, cos(anglex), sin(anglex),
+    //    0.0, -sin(anglex), cos(anglex),
+    // );
+    let t = radians(0);
+    // let t = radians(4.0 * f32(uniforms.subdivs));
+    // let up = normalize(vec3f(0.0, -1.5, -1.0));
+    let up = normalize(vec3f(-0.15, -1.5, -1));
+    let cos_t = cos(t);
+    let sin_t = sin(t);
+    let rotmat = mat3x3f(
+        cos_t + up[0]*up[0]*(1 - cos_t), up[0]*up[1]*(1-cos_t)-up[2] * sin_t, up[0]*up[2]*(1-cos_t) + up[1] * sin_t,
+        up[1]*up[0]*(1-cos_t)+up[2] * sin_t, cos_t + up[1]*up[1] * (1 - cos_t), up[1]*up[2] * (1 - cos_t)-up[0]*sin_t,
+        up[2]*up[0]*(1-cos_t)-up[1] * sin_t, up[1]*up[2] * (1 - cos_t)+up[0]*sin_t, cos_t + up[2]*up[2] * (1 - cos_t)
+    );
+    
+    // var lookat = vec3f(-0.13, 1.65, 3.4);
+    var lookat = vec3f(0.72, 1.65, 3.4);
+    // let lookat_to_eye = vec3f(0.0, -1 / sqrt(2), -1 / sqrt(2)) * magnitude;
+    let lookat_to_eye = vec3f(0.0,  1.0, -1.5) * magnitude;
+    // let eye = (rotmatz * (rotmaty * lookat_to_eye) + lookat) * 100;
+    let eye = (rotmat * lookat_to_eye + lookat) * 100;
+    lookat *= 100;
+    // let up = normalize(vec3f(0.0, -1.5, -1.0));
 
     let d = uniforms.cam_const * 2.0;
 
@@ -552,8 +598,9 @@ fn main_vs(@builtin(vertex_index) VertexIndex : u32) -> VSOut {
 fn main_fs(@location(0) coords: vec2f) -> @location(0) vec4f {
     const bgcolor = vec4f(0.1, 0.3, 0.6, 1.0);
     // const bgcolor = vec4f(0.0, 0.0, 0.0, 1.0);
-    // const max_depth = 10;
-    let max_depth = uniforms.subdivs;
+    const max_depth = 20;
+    // let max_depth = uniforms.subdivs;
+    // let max_depth = 25;
     const gamma = 1.0;
 
     var result = vec3f(0.0);
@@ -581,7 +628,7 @@ fn main_fs(@location(0) coords: vec2f) -> @location(0) vec4f {
         }
     }
     if(any_hit & max_depth_reached) {
-        result += hit.transmittance * bgcolor.rgb;
+        result += hit.transmittance *vec3f(0.0);
     }
     
     return vec4f(pow(result, vec3f(1.0 / gamma)), bgcolor.a);

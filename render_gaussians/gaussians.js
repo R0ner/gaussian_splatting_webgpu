@@ -131,15 +131,12 @@ async function main() {
 
     // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k.json");
     var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_full.json");
-    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial.json");
-
-    // var gaussianInfo = await read_gaussians("../resources/objects/private/nisse_15k_NO_PRUNE.json");
-    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial_NO_PRUNE.json");
-    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_onlyleaf_v2.json");
+  
     // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_15k_spatial_bvh_v1.json");
-    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial_bvh.json");
+    // var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_spatial_bvh.json");
+    var spatialdataInfo = await read_spatial_data("../resources/objects/private/nisse_full_both_spatial_bvh.json");
    
-    console.log(gaussianInfo);  
+    // console.log(gaussianInfo);  
     // console.log(spatialdataInfo);
 
     buffers.means = device.createBuffer({
